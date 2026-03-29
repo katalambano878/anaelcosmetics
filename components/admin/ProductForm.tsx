@@ -10,6 +10,9 @@ interface ProductFormProps {
     isEditMode?: boolean;
 }
 
+const toSlug = (value: string) =>
+    value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+
 export default function ProductForm({ initialData, isEditMode = false }: ProductFormProps) {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
@@ -31,7 +34,7 @@ export default function ProductForm({ initialData, isEditMode = false }: Product
 
     // Auto-generate SKU function
     const generateSku = () => {
-        const prefix = 'MMS'; // MultiMey Supplies
+        const prefix = 'ST'; // Store identifier prefix
         const timestamp = Date.now().toString(36).toUpperCase().slice(-4);
         const random = Math.random().toString(36).substring(2, 6).toUpperCase();
         return `${prefix}-${timestamp}-${random}`;
@@ -196,6 +199,7 @@ export default function ProductForm({ initialData, isEditMode = false }: Product
     const [seoTitle, setSeoTitle] = useState(initialData?.seo_title || '');
     const [metaDescription, setMetaDescription] = useState(initialData?.seo_description || '');
     const [urlSlug, setUrlSlug] = useState(initialData?.slug || '');
+    const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(Boolean(initialData?.slug));
     const [keywords, setKeywords] = useState(initialData?.tags?.join(', ') || '');
 
     const tabs = [
@@ -220,12 +224,12 @@ export default function ProductForm({ initialData, isEditMode = false }: Product
         fetchCategories();
     }, [categoryId]);
 
-    // Auto-generate slug from name if not manually edited
+    // Keep slug in sync with product name until user edits slug manually.
     useEffect(() => {
-        if (!isEditMode && productName && !urlSlug) {
-            setUrlSlug(productName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, ''));
+        if (!isEditMode && !isSlugManuallyEdited) {
+            setUrlSlug(toSlug(productName || ''));
         }
-    }, [productName, isEditMode, urlSlug]);
+    }, [productName, isEditMode, isSlugManuallyEdited]);
 
     // Auto-generate SKU for new products
     useEffect(() => {
@@ -281,7 +285,7 @@ export default function ProductForm({ initialData, isEditMode = false }: Product
 
             const productData = {
                 name: productName,
-                slug: urlSlug || productName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, ''),
+                slug: toSlug(urlSlug || productName),
                 description,
                 category_id: categoryId || null,
                 price: parseFloat(price) || 0,
@@ -1061,7 +1065,12 @@ export default function ProductForm({ initialData, isEditMode = false }: Product
                                     <input
                                         type="text"
                                         value={urlSlug}
-                                        onChange={(e) => setUrlSlug(e.target.value)}
+                                        onChange={(e) => {
+                                            const inputValue = e.target.value;
+                                            const normalizedSlug = toSlug(inputValue);
+                                            setUrlSlug(normalizedSlug);
+                                            setIsSlugManuallyEdited(Boolean(normalizedSlug));
+                                        }}
                                         className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-r-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                         placeholder="product-slug"
                                     />

@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from '@/lib/rate-limit';
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 export async function POST(req: Request) {
     try {
         // Rate limiting
@@ -31,16 +33,22 @@ export async function POST(req: Request) {
         // Ensure environment variables are set
         if (!process.env.MOOLRE_API_USER || !process.env.MOOLRE_API_PUBKEY || !process.env.MOOLRE_ACCOUNT_NUMBER) {
             console.error('Missing Moolre credentials');
-            return NextResponse.json({ success: false, message: 'Payment gateway configuration error' }, { status: 500 });
+            return NextResponse.json({ success: false, message: 'Payment gateway temporarily unavailable' }, { status: 503 });
         }
 
         // SECURITY: Fetch the order from the database and use its total.
         // NEVER trust the amount from the client.
-        const { data: order, error: orderError } = await supabaseAdmin
+        let orderQuery = supabaseAdmin
             .from('orders')
-            .select('id, order_number, total, email, payment_status')
-            .or(`id.eq.${orderId},order_number.eq.${orderId}`)
-            .single();
+            .select('id, order_number, total, email, payment_status');
+
+        if (UUID_REGEX.test(orderId)) {
+            orderQuery = orderQuery.eq('id', orderId);
+        } else {
+            orderQuery = orderQuery.eq('order_number', orderId);
+        }
+
+        const { data: order, error: orderError } = await orderQuery.single();
 
         if (orderError || !order) {
             console.error('[Payment] Order not found:', orderId);
@@ -70,7 +78,7 @@ export async function POST(req: Request) {
         const payload = {
             type: 1,
             amount: amount.toString(),
-            email: process.env.MOOLRE_MERCHANT_EMAIL || 'admin@standardecom.com',
+            email: process.env.MOOLRE_MERCHANT_EMAIL || 'admin@example.com',
             externalref: uniqueRef,
             callback: `${baseUrl}/api/payment/moolre/callback`,
             redirect: `${baseUrl}/order-success?order=${orderRef}&payment_success=true`,

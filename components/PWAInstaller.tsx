@@ -68,7 +68,25 @@ export default function PWAInstaller() {
     window.addEventListener('beforeinstallprompt', handleBeforeInstall);
     window.addEventListener('appinstalled', handleInstalled);
 
-    // Register service worker with update detection
+    // Avoid service worker caching issues during development.
+    if (process.env.NODE_ENV !== 'production' && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        registrations.forEach((registration) => registration.unregister());
+      });
+      if ('caches' in window) {
+        caches.keys().then((cacheNames) => {
+          cacheNames.forEach((cacheName) => {
+            caches.delete(cacheName);
+          });
+        });
+      }
+      return () => {
+        window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+        window.removeEventListener('appinstalled', handleInstalled);
+      };
+    }
+
+    // Register service worker with update detection in production only.
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker
         .register('/service-worker.js', { scope: '/' })

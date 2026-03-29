@@ -273,21 +273,21 @@ export default function ShippingPage() {
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-blue-700 to-blue-900 rounded-2xl p-8 text-white text-center">
+        <div className="bg-[#0A0F1D] rounded-2xl p-8 text-white text-center border border-white/10 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.8)]">
           <h2 className="text-3xl font-bold mb-4">Need Help with Your Delivery?</h2>
-          <p className="text-blue-100 mb-6 leading-relaxed">
+          <p className="text-gray-300 mb-6 leading-relaxed">
             Questions about shipping costs, delivery times, or tracking? Our customer service team is here to help.
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
             <Link
               href="/contact"
-              className="inline-flex items-center gap-2 bg-white text-blue-700 px-6 py-3 rounded-full font-medium hover:bg-blue-50 transition-colors whitespace-nowrap"
+              className="inline-flex items-center gap-2 bg-white text-[#0A0F1D] px-6 py-3 rounded-full font-medium hover:bg-gray-100 transition-colors whitespace-nowrap"
             >
               Contact Support
             </Link>
             <Link
               href="/faqs"
-              className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-full font-medium hover:bg-blue-500 transition-colors whitespace-nowrap"
+              className="inline-flex items-center gap-2 bg-white/10 text-white px-6 py-3 rounded-full font-medium hover:bg-white/20 border border-white/20 transition-colors whitespace-nowrap"
             >
               View FAQs
             </Link>

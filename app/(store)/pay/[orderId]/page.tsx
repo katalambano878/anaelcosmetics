@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { usePageTitle } from '@/hooks/usePageTitle';
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 export default function PaymentPage() {
   usePageTitle('Complete Payment');
   const params = useParams();
@@ -21,13 +23,15 @@ export default function PaymentPage() {
     async function fetchOrder() {
       try {
         // Fetch order by ID (UUID) or order_number
-        let query = supabase
+        const baseQuery = supabase
           .from('orders')
-          .select('*')
-          .or(`id.eq.${orderId},order_number.eq.${orderId}`)
-          .single();
+          .select('*');
 
-        const { data, error: fetchError } = await query;
+        const orderQuery = UUID_REGEX.test(orderId)
+          ? baseQuery.eq('id', orderId)
+          : baseQuery.eq('order_number', orderId);
+
+        const { data, error: fetchError } = await orderQuery.single();
 
         if (fetchError || !data) {
           setError('Order not found. Please check your link and try again.');
@@ -130,7 +134,7 @@ export default function PaymentPage() {
         {/* Header */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-block mb-6">
-            <span className="text-2xl font-['Pacifico'] text-blue-700">MultiMey</span>
+            <span className="text-2xl font-['Pacifico'] text-blue-700">ANAEL</span>
           </Link>
           <h1 className="text-2xl font-bold text-gray-900">Complete Your Payment</h1>
           <p className="text-gray-600 mt-2">Hi {customerName}, your order is waiting for payment.</p>

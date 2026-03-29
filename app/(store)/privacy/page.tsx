@@ -281,7 +281,7 @@ export default function PrivacyPage() {
             </div>
 
             <p className="text-gray-600 leading-relaxed">
-              To exercise any of these rights, please contact us at <a href="mailto:support@multimeysupplies.com" className="text-blue-700 font-medium hover:underline">support@multimeysupplies.com</a> or through your account settings. We will respond within 30 days.
+              To exercise any of these rights, please contact us through the contact form on our website or through your account settings. We will respond within 30 days.
             </p>
           </section>
 
@@ -374,37 +374,9 @@ export default function PrivacyPage() {
 
           <section className="mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-6">11. Contact Us</h2>
-            <p className="text-gray-600 leading-relaxed mb-6">
-              If you have any questions, concerns, or requests regarding this privacy policy or our data practices, please contact us:
+            <p className="text-gray-600 leading-relaxed">
+              If you have any questions, concerns, or requests regarding this privacy policy or our data practices, please use the contact form on our website.
             </p>
-
-            <div className="bg-gray-50 border border-gray-200 p-8 rounded-xl">
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <i className="ri-mail-line text-blue-700 text-xl mt-1"></i>
-                  <div>
-                    <p className="font-medium text-gray-900">Email</p>
-                    <a href="mailto:support@multimeysupplies.com" className="text-blue-700 hover:underline">support@multimeysupplies.com</a>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <i className="ri-phone-line text-blue-700 text-xl mt-1"></i>
-                  <div>
-                    <p className="font-medium text-gray-900">Phone</p>
-                    <a href="tel:+233209597443" className="text-blue-700 hover:underline">+233 20 959 7443</a>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <i className="ri-map-pin-line text-blue-700 text-xl mt-1"></i>
-                  <div>
-                    <p className="font-medium text-gray-900">Address</p>
-                    <p className="text-gray-600">MultiMey Supplies<br />Accra, Ghana</p>
-                  </div>
-                </div>
-              </div>
-            </div>
           </section>
         </div>
       </div>
