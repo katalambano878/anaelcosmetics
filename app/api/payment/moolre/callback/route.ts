@@ -112,9 +112,10 @@ export async function POST(req: Request) {
             'callback';
 
         // Payment status: body.status === 1 means API call succeeded,
-        // body.data.txtstatus === 1 means transaction was successful
+        // data.txstatus/txtstatus === 1 means transaction was successful
+        // (Moolre uses both spellings depending on the flow)
         const apiStatus = body.status;
-        const txStatus = data.txtstatus;
+        const txStatus = data.txtstatus ?? data.txstatus;
         const messageStr = String(body.message || '').toLowerCase();
 
         console.log('[Callback] Order ref:', merchantOrderRef,
@@ -138,9 +139,12 @@ export async function POST(req: Request) {
         const txOk = (txStatus === 1 || txStatus === '1');
         const messageOk = messageStr.includes('successful') || messageStr.includes('success');
 
+        // An explicit transaction failure code always wins, regardless of message
+        const txFailed = (txStatus === 2 || txStatus === '2');
+
         // Require at least api status OR tx status to be explicitly successful
         // AND the message must not indicate failure
-        const isSuccess = (apiOk || txOk) && !messageStr.includes('fail') && !messageStr.includes('error');
+        const isSuccess = !txFailed && (apiOk || txOk) && !messageStr.includes('fail') && !messageStr.includes('error');
 
         if (isSuccess) {
             console.log(`[Callback] Payment SUCCESS for Order ${merchantOrderRef}`);
