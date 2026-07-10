@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import ProductCard, { type ColorVariant, getColorHex } from '@/components/ProductCard';
 import ProductCardSkeleton from '@/components/skeletons/ProductCardSkeleton';
+import ProductSlider, { type SliderProduct } from '@/components/ProductSlider';
 import AnimatedSection, { AnimatedGrid } from '@/components/AnimatedSection';
 import NewsletterSection from '@/components/NewsletterSection';
 import { useCMS } from '@/context/CMSContext';
@@ -16,6 +17,7 @@ export default function Home() {
   const { getSetting } = useCMS();
   const siteName = getSetting('site_name') || 'ANAEL';
   const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
+  const [sliderProducts, setSliderProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -60,10 +62,11 @@ export default function Home() {
   useEffect(() => {
     async function fetchData() {
       try {
-        // Fetch featured products directly from Supabase
+        const productSelect = '*, product_variants(*), product_images(*)';
+
         const { data: productsData, error: productsError } = await supabase
           .from('products')
-          .select('*, product_variants(*), product_images(*)')
+          .select(productSelect)
           .eq('status', 'active')
           .eq('featured', true)
           .order('created_at', { ascending: false })
@@ -71,6 +74,16 @@ export default function Home() {
 
         if (productsError) throw productsError;
         setFeaturedProducts(productsData || []);
+
+        const { data: sliderData, error: sliderError } = await supabase
+          .from('products')
+          .select(productSelect)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false })
+          .limit(16);
+
+        if (sliderError) throw sliderError;
+        setSliderProducts(sliderData || []);
 
         // Fetch featured categories (featured is stored in metadata JSONB)
         const { data: categoriesData, error: categoriesError } = await supabase
@@ -100,6 +113,49 @@ export default function Home() {
   const getHeroImage = () => {
     if (config.hero.backgroundImage) return config.hero.backgroundImage;
     return '/image.jpg';
+  };
+
+  const mapProductToSlider = (product: any): SliderProduct => {
+    const variants = product.product_variants || [];
+    const hasVariants = variants.length > 0;
+    const minVariantPrice = hasVariants
+      ? Math.min(...variants.map((v: any) => v.price || product.price))
+      : undefined;
+    const totalVariantStock = hasVariants
+      ? variants.reduce((sum: number, v: any) => sum + (v.quantity || 0), 0)
+      : 0;
+    const effectiveStock = hasVariants ? totalVariantStock : product.quantity;
+
+    const colorVariants: ColorVariant[] = [];
+    const seenColors = new Set<string>();
+    for (const v of variants) {
+      const colorName = (v as any).option2;
+      if (colorName && !seenColors.has(colorName.toLowerCase().trim())) {
+        const hex = getColorHex(colorName);
+        if (hex) {
+          seenColors.add(colorName.toLowerCase().trim());
+          colorVariants.push({ name: colorName.trim(), hex });
+        }
+      }
+    }
+
+    return {
+      id: product.id,
+      slug: product.slug,
+      name: product.name,
+      price: product.price,
+      originalPrice: product.compare_at_price,
+      image: product.product_images?.[0]?.url || 'https://via.placeholder.com/400x500',
+      rating: product.rating_avg || 5,
+      reviewCount: product.review_count || 0,
+      badge: product.featured ? 'Featured' : undefined,
+      inStock: effectiveStock > 0,
+      maxStock: effectiveStock || 50,
+      moq: product.moq || 1,
+      hasVariants,
+      minVariantPrice,
+      colorVariants,
+    };
   };
 
   const renderBanners = () => {
@@ -342,48 +398,9 @@ export default function Home() {
             </div>
           ) : (
             <AnimatedGrid className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 lg:gap-8">
-              {featuredProducts.map((product) => {
-                const variants = product.product_variants || [];
-                const hasVariants = variants.length > 0;
-                const minVariantPrice = hasVariants ? Math.min(...variants.map((v: any) => v.price || product.price)) : undefined;
-                const totalVariantStock = hasVariants ? variants.reduce((sum: number, v: any) => sum + (v.quantity || 0), 0) : 0;
-                const effectiveStock = hasVariants ? totalVariantStock : product.quantity;
-
-                // Extract unique colors from option2
-                const colorVariants: ColorVariant[] = [];
-                const seenColors = new Set<string>();
-                for (const v of variants) {
-                  const colorName = (v as any).option2;
-                  if (colorName && !seenColors.has(colorName.toLowerCase().trim())) {
-                    const hex = getColorHex(colorName);
-                    if (hex) {
-                      seenColors.add(colorName.toLowerCase().trim());
-                      colorVariants.push({ name: colorName.trim(), hex });
-                    }
-                  }
-                }
-
-                return (
-                  <ProductCard
-                    key={product.id}
-                    id={product.id}
-                    slug={product.slug}
-                    name={product.name}
-                    price={product.price}
-                    originalPrice={product.compare_at_price}
-                    image={product.product_images?.[0]?.url || 'https://via.placeholder.com/400x500'}
-                    rating={product.rating_avg || 5}
-                    reviewCount={product.review_count || 0}
-                    badge={product.featured ? 'Featured' : undefined}
-                    inStock={effectiveStock > 0}
-                    maxStock={effectiveStock || 50}
-                    moq={product.moq || 1}
-                    hasVariants={hasVariants}
-                    minVariantPrice={minVariantPrice}
-                    colorVariants={colorVariants}
-                  />
-                );
-              })}
+              {featuredProducts.map((product) => (
+                <ProductCard key={product.id} {...mapProductToSlider(product)} />
+              ))}
             </AnimatedGrid>
           )}
 
@@ -395,6 +412,39 @@ export default function Home() {
               View All Products
             </Link>
           </div>
+        </div>
+      </section>
+
+      {/* Product Slider */}
+      <section className="py-16 md:py-24 bg-white border-t border-stone-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <AnimatedSection className="text-center mb-12 md:mb-16">
+            <span className="inline-block py-1 px-4 rounded-full bg-stone-100 text-gray-500 font-semibold text-xs tracking-widest uppercase mb-4 border border-stone-200">
+              Just In
+            </span>
+            <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl text-gray-900 mb-4">
+              Shop the Collection
+            </h2>
+            <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+              Browse our latest products — updated automatically as new stock arrives
+            </p>
+          </AnimatedSection>
+
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8 md:gap-8">
+              {[...Array(4)].map((_, i) => (
+                <ProductCardSkeleton key={i} />
+              ))}
+            </div>
+          ) : (
+            <AnimatedSection>
+              <ProductSlider
+                products={sliderProducts.map(mapProductToSlider)}
+                autoPlayInterval={4000}
+                fadeColor="white"
+              />
+            </AnimatedSection>
+          )}
         </div>
       </section>
 

@@ -21,7 +21,7 @@ export default function PageHero({ title, subtitle, backgroundImage }: PageHeroP
                         sizes="100vw"
                         quality={82}
                     />
-                    <div className="absolute inset-0 bg-black/50"></div>
+                    <div className="absolute inset-0 bg-black/40"></div>
                 </>
             ) : (
                 <div className="absolute inset-0 opacity-20">

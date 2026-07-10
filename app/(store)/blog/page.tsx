@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import PageHero from '@/components/PageHero';
 
 export default function BlogPage() {
   const featuredPost = {
@@ -56,16 +57,11 @@ export default function BlogPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="bg-gradient-to-br from-blue-50 via-white to-amber-50 py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-5xl font-bold text-gray-900 mb-6">Our Blog</h1>
-            <p className="text-xl text-gray-600 leading-relaxed">
-              Shopping tips, product guides, and the latest trends to help you make smarter purchasing decisions.
-            </p>
-          </div>
-        </div>
-      </div>
+      <PageHero
+        title="Our Blog"
+        subtitle="Beauty tips, product guides, and the latest trends from Anael Cosmetics."
+        backgroundImage="/blog-hero.png"
+      />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <Link href={`/blog/${featuredPost.id}`} className="block mb-16 hover:opacity-90 transition-opacity cursor-pointer">
