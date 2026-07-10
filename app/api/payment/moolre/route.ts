@@ -40,7 +40,7 @@ export async function POST(req: Request) {
         // NEVER trust the amount from the client.
         let orderQuery = supabaseAdmin
             .from('orders')
-            .select('id, order_number, total, email, payment_status');
+            .select('id, order_number, total, email, payment_status, metadata');
 
         if (UUID_REGEX.test(orderId)) {
             orderQuery = orderQuery.eq('id', orderId);
@@ -107,6 +107,23 @@ export async function POST(req: Request) {
         console.log('[Payment] Response status:', result.status, '| Has URL:', !!result.data?.authorization_url);
 
         if (result.status === 1 && result.data?.authorization_url) {
+            // Persist the externalref we sent to Moolre so the verify endpoint
+            // can look the transaction up later (Moolre indexes by this ref,
+            // not by our plain order number).
+            const { error: metaError } = await supabaseAdmin
+                .from('orders')
+                .update({
+                    metadata: {
+                        ...(order.metadata || {}),
+                        payment_method: 'moolre',
+                        moolre_external_ref: uniqueRef
+                    }
+                })
+                .eq('id', order.id);
+            if (metaError) {
+                console.error('[Payment] Failed to store external ref (non-fatal):', metaError.message);
+            }
+
             return NextResponse.json({ success: true, url: result.data.authorization_url, reference: result.data.reference });
         } else {
             return NextResponse.json({ success: false, message: result.message || 'Failed to generate payment link' }, { status: 400 });
