@@ -12,6 +12,81 @@ import NewsletterSection from '@/components/NewsletterSection';
 import { useCMS } from '@/context/CMSContext';
 import { usePageTitle } from '@/hooks/usePageTitle';
 
+const heroSlides = [
+  {
+    image: '/about-hero.png',
+    tag: 'Anael Cosmetics',
+    heading: <>Your Beauty, <br /><span className="italic font-light text-rose-200">Our Passion</span></>,
+    subtext: 'Lip glosses, lip liners, lip care, lashes, hair clips & makeup bags — crafted for the modern Ghanaian woman.',
+    cta: { text: 'Shop Now', href: '/shop' },
+    cta2: { text: 'Our Story', href: '/about' },
+    position: 'object-center',
+  },
+  {
+    image: '/shop-hero.png',
+    tag: 'Lip Collection',
+    heading: <>Glossy Lips, <br /><span className="italic font-light text-amber-200">Bold Looks</span></>,
+    subtext: 'From everyday nudes to statement reds — discover lip products that last all day.',
+    cta: { text: 'Shop Lips', href: '/shop' },
+    cta2: { text: 'View All', href: '/categories' },
+    position: 'object-center',
+  },
+  {
+    image: '/categories-hero.png',
+    tag: 'Color & Glow',
+    heading: <>Blush & <br /><span className="italic font-light text-pink-200">Radiance</span></>,
+    subtext: 'Build your perfect look with our curated range of blushes, liners, and beauty essentials.',
+    cta: { text: 'Explore', href: '/categories' },
+    cta2: { text: 'Shop Now', href: '/shop' },
+    position: 'object-center',
+  },
+  {
+    image: '/contact-hero.png',
+    tag: 'New Arrivals',
+    heading: <>Fresh <br /><span className="italic font-light text-rose-200">Favorites</span></>,
+    subtext: 'Be the first to try our newest lip glosses and beauty must-haves.',
+    cta: { text: 'Shop New', href: '/shop?sort=newest' },
+    cta2: { text: 'Learn More', href: '/about' },
+    position: 'object-center',
+  },
+  {
+    image: '/wishlist-hero.png',
+    tag: 'Luxe Lip Care',
+    heading: <>Pamper <br /><span className="italic font-light text-amber-200">Your Pout</span></>,
+    subtext: 'Nourishing lip care formulas that keep your lips soft, smooth, and ready for any shade.',
+    cta: { text: 'Shop Lip Care', href: '/shop' },
+    cta2: { text: 'Our Story', href: '/about' },
+    position: 'object-center',
+  },
+  {
+    image: '/cart-hero.png',
+    tag: 'Bold Beauty',
+    heading: <>Statement <br /><span className="italic font-light text-red-200">Lips</span></>,
+    subtext: 'Turn heads with our vibrant lipsticks and liners — confidence in every swipe.',
+    cta: { text: 'Shop Now', href: '/shop' },
+    cta2: { text: 'View Catalog', href: '/categories' },
+    position: 'object-center',
+  },
+  {
+    image: '/blog-hero.png',
+    tag: 'Everyday Glam',
+    heading: <>Effortless <br /><span className="italic font-light text-rose-200">Elegance</span></>,
+    subtext: 'Beauty that fits your lifestyle — quality cosmetics at prices that make sense.',
+    cta: { text: 'Shop Collections', href: '/shop' },
+    cta2: { text: 'Contact Us', href: '/contact' },
+    position: 'object-center',
+  },
+  {
+    image: '/faqs-hero.png',
+    tag: 'Express Yourself',
+    heading: <>Playful <br /><span className="italic font-light text-pink-200">& Proud</span></>,
+    subtext: 'Fun, fearless colour for every mood. Shop Anael Cosmetics and own your look.',
+    cta: { text: 'Shop Now', href: '/shop' },
+    cta2: { text: 'Get In Touch', href: '/contact' },
+    position: 'object-center',
+  },
+] as const;
+
 export default function Home() {
   usePageTitle('');
   const { getSetting } = useCMS();
@@ -26,7 +101,7 @@ export default function Home() {
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % 3);
+      setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
     }, 3000);
     return () => clearInterval(timer);
   }, []);
@@ -44,8 +119,8 @@ export default function Home() {
     banners?: Array<{ text: string; active: boolean }>;
   } = {
     hero: {
-      headline: 'Dresses, Electronics, Bags & Shoes — Everything You Need, One Store',
-      subheadline: 'Quality products locally sourced and imported directly from China. Unbeatable prices for individuals and resellers across Ghana.',
+      headline: 'Anael Cosmetics — Lip Glosses, Liners, Lashes & More',
+      subheadline: 'Quality beauty products for the modern Ghanaian woman. Lip glosses, lip liners, lip care, lashes, hair clips & makeup bags at unbeatable prices.',
       primaryButtonText: 'Shop Collections',
       primaryButtonLink: '/shop',
       secondaryButtonText: 'Our Story',
@@ -192,35 +267,7 @@ export default function Home() {
         </div>
 
         {/* Background Slider + Per-Slide Content */}
-        {[
-          {
-            image: '/hero-1.png',
-            tag: 'Exclusive Deals',
-            heading: <>Limited <br /><span className="italic font-light text-amber-200">Time Offers</span></>,
-            subtext: 'Don\'t miss out on our seasonal sale. Great discounts on your favorite items.',
-            cta: { text: 'Shop Now', href: '/shop?on_sale=true' },
-            cta2: { text: 'View Catalog', href: '/categories' },
-            position: 'object-center'
-          },
-          {
-            image: '/hero-2.png',
-            tag: 'Fashion & Style',
-            heading: <>Elegance <br /><span className="italic font-light text-rose-200">Redefined</span></>,
-            subtext: 'Step into the season with our exclusive fashion edits. Curated for the modern trendsetter.',
-            cta: { text: 'Shop Now', href: '/shop' },
-            cta2: { text: 'Learn More', href: '/about' },
-            position: 'object-top'
-          },
-          {
-            image: '/hero-3.png',
-            tag: 'New Arrivals',
-            heading: <>Premium <br /><span className="italic font-light text-blue-200">Quality Collection</span></>,
-            subtext: 'Discover our latest arrivals imported directly for you. Unmatched quality at unbeatable prices.',
-            cta: { text: 'Shop Now', href: '/shop?sort=newest' },
-            cta2: { text: 'View Catalog', href: '/categories' },
-            position: 'object-center'
-          },
-        ].map((slide, index) => (
+        {heroSlides.map((slide, index) => (
           <div
             key={index}
             className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
@@ -239,8 +286,8 @@ export default function Home() {
             </div>
 
             {/* Premium Gradient Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent"></div>
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
 
             {/* Slide Content */}
             <div className="absolute inset-0 flex flex-col justify-center items-center text-center px-6 md:px-16 max-w-7xl mx-auto h-full mt-[-20px]">
@@ -293,7 +340,7 @@ export default function Home() {
           {/* Extremely subtle interior shine */}
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
 
-          {[0, 1, 2].map((i) => (
+          {heroSlides.map((_, i) => (
             <button
               key={i}
               onClick={() => setCurrentSlide(i)}
@@ -309,7 +356,7 @@ export default function Home() {
         {/* Decoration */}
         <div className="absolute bottom-10 right-6 md:right-16 z-20 hidden md:block">
           <div className="text-white/40 text-sm font-light tracking-widest vertical-text transform rotate-180" style={{ writingMode: 'vertical-rl' }}>
-            EST. 2026 - COLLECTION
+            ANAEL COSMETICS
           </div>
         </div>
 
