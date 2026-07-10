@@ -24,11 +24,11 @@ const heroSlides = [
   },
   {
     image: '/hero-2.png',
-    tag: 'Lip Collection',
-    heading: <>Glossy Lips, <br /><span className="italic font-light text-amber-200">Bold Looks</span></>,
-    subtext: 'From everyday nudes to statement reds — discover lip products that last all day.',
-    cta: { text: 'Shop Lips', href: '/shop' },
-    cta2: { text: 'View All', href: '/categories' },
+    tag: 'Color & Glow',
+    heading: <>Blush & <br /><span className="italic font-light text-pink-200">Radiance</span></>,
+    subtext: 'Build your perfect look with our curated range of blushes, liners, and beauty essentials.',
+    cta: { text: 'Explore', href: '/categories' },
+    cta2: { text: 'Shop Now', href: '/shop' },
     position: 'object-center',
   },
   {
