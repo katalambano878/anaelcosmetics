@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import ProductCard, { type ColorVariant } from '@/components/ProductCard';
@@ -28,6 +28,8 @@ function ShopContent() {
   const [sortBy, setSortBy] = useState('popular');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [page, setPage] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement>(null);
   const productsPerPage = 9;
 
   // Initialize from URL params
@@ -63,7 +65,11 @@ function ShopContent() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     async function fetchProducts() {
-      setLoading(true);
+      if (page === 1) {
+        setLoading(true);
+      } else {
+        setLoadingMore(true);
+      }
       try {
         const search = searchParams.get('search');
 
@@ -186,20 +192,44 @@ function ShopContent() {
               colorVariants
             };
           });
-          setProducts(formattedProducts);
+          // Page 1 replaces the list; later pages append (infinite scroll)
+          setProducts(prev => {
+            if (page === 1) return formattedProducts;
+            const existing = new Set(prev.map((p: any) => p.id));
+            return [...prev, ...formattedProducts.filter((p: any) => !existing.has(p.id))];
+          });
           setTotalProducts(count || 0);
         }
       } catch (err) {
         console.error('Error fetching products:', err);
       } finally {
         setLoading(false);
+        setLoadingMore(false);
       }
     }
 
     fetchProducts();
   }, [selectedCategory, priceRange, selectedRating, sortBy, page, searchParams]);
 
-  const totalPages = Math.ceil(totalProducts / productsPerPage);
+  const hasMore = products.length < totalProducts;
+
+  // Infinite scroll: load the next page when the sentinel enters the viewport
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel || loading || loadingMore || !hasMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setPage(p => p + 1);
+        }
+      },
+      { rootMargin: '400px' }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [loading, loadingMore, hasMore]);
 
   return (
     <main className="min-h-screen bg-white">
@@ -437,32 +467,20 @@ function ShopContent() {
                 </>
               )}
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="mt-16 flex justify-center">
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => setPage(p => Math.max(1, p - 1))}
-                      disabled={page === 1}
-                      className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <i className="ri-arrow-left-s-line text-xl text-gray-700"></i>
-                    </button>
-
-                    {/* Simple page numbers - condensed for brevity */}
-                    <span className="px-4 font-medium text-gray-700">
-                      Page {page} of {totalPages}
-                    </span>
-
-                    <button
-                      onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                      disabled={page === totalPages}
-                      className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <i className="ri-arrow-right-s-line text-xl text-gray-700"></i>
-                    </button>
+              {/* Infinite scroll sentinel + loader */}
+              {!loading && hasMore && (
+                <div ref={sentinelRef} className="mt-12 flex justify-center py-8">
+                  <div className="flex items-center space-x-3 text-gray-500">
+                    <div className="w-6 h-6 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin"></div>
+                    <span className="text-sm font-medium">Loading more products…</span>
                   </div>
                 </div>
+              )}
+
+              {!loading && !hasMore && products.length > 0 && (
+                <p className="mt-16 text-center text-sm text-gray-400">
+                  You&apos;ve seen all {totalProducts} products
+                </p>
               )}
             </div>
           </div>

@@ -100,7 +100,7 @@ export default function Home() {
           .eq('status', 'active')
           .eq('featured', true)
           .order('created_at', { ascending: false })
-          .limit(4);
+          .limit(24);
 
         if (productsError) throw productsError;
         setFeaturedProducts(productsData || []);
