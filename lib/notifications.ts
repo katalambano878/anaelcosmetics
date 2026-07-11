@@ -69,6 +69,84 @@ function emailInfoRow(label: string, value: string): string {
 </tr>`;
 }
 
+// Itemized order table (products, quantities, prices)
+function emailItemsTable(items: OrderEmailItem[]): string {
+    if (items.length === 0) return '';
+    const rows = items.map((item) => {
+        const name = escapeHtml(item.product_name || 'Product');
+        const variant = item.variant_name ? `<p style="margin:2px 0 0;color:#6b7280;font-size:12px;">${escapeHtml(item.variant_name)}</p>` : '';
+        const image = item.metadata?.image
+            ? `<img src="${item.metadata.image}" width="56" height="56" alt="" style="display:block;width:56px;height:56px;object-fit:cover;border-radius:8px;background-color:#f3f4f6;" />`
+            : `<div style="width:56px;height:56px;border-radius:8px;background-color:#f3f4f6;"></div>`;
+        return `<tr>
+<td style="padding:12px 0 12px 16px;width:64px;border-bottom:1px solid #f3f4f6;">${image}</td>
+<td style="padding:12px 8px;border-bottom:1px solid #f3f4f6;">
+  <p style="margin:0;color:#111827;font-size:14px;font-weight:600;">${name}</p>
+  ${variant}
+  <p style="margin:4px 0 0;color:#6b7280;font-size:12px;">Qty: ${item.quantity} &times; GH&#8373;${Number(item.unit_price).toFixed(2)}</p>
+</td>
+<td style="padding:12px 16px 12px 8px;border-bottom:1px solid #f3f4f6;text-align:right;white-space:nowrap;">
+  <p style="margin:0;color:#111827;font-size:14px;font-weight:700;">GH&#8373;${Number(item.total_price).toFixed(2)}</p>
+</td>
+</tr>`;
+    }).join('');
+
+    return `<p style="margin:24px 0 8px;color:#111827;font-size:15px;font-weight:700;">Order Items (${items.length})</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;">
+${rows}
+</table>`;
+}
+
+// Order totals breakdown (subtotal / shipping / discount / total)
+function emailTotalsTable(order: any): string {
+    const line = (label: string, value: string, bold = false) => `<tr>
+<td style="padding:6px 16px;color:${bold ? '#111827' : '#6b7280'};font-size:${bold ? '15px' : '13px'};font-weight:${bold ? '700' : '400'};">${label}</td>
+<td style="padding:6px 16px;color:${bold ? '#111827' : '#374151'};font-size:${bold ? '16px' : '13px'};font-weight:${bold ? '700' : '600'};text-align:right;">${value}</td>
+</tr>`;
+
+    const fmt = (v: any) => `GH&#8373;${Number(v || 0).toFixed(2)}`;
+    const subtotal = order.subtotal ?? order.total;
+    const shippingVal = Number(order.shipping_total || 0);
+    const discountVal = Number(order.discount_total || 0);
+
+    return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f9fafb;border-radius:12px;overflow:hidden;margin:12px 0 20px;">
+${line('Subtotal', fmt(subtotal))}
+${line('Delivery', shippingVal > 0 ? fmt(shippingVal) : 'Free / Pickup')}
+${discountVal > 0 ? line('Discount', `-${fmt(discountVal)}`) : ''}
+<tr><td colspan="2" style="border-top:1px solid #e5e7eb;padding:0;"></td></tr>
+${line('Total', fmt(order.total), true)}
+</table>`;
+}
+
+// Delivery address block
+function emailAddressBlock(order: any): string {
+    const addr = order.shipping_address;
+    if (!addr) return '';
+    const name = addr.full_name || [addr.firstName, addr.lastName].filter(Boolean).join(' ');
+    const lines = [
+        name,
+        addr.address,
+        [addr.city, addr.region].filter(Boolean).join(', '),
+        addr.phone,
+    ].filter(Boolean).map((l: string) => escapeHtml(String(l)));
+    if (lines.length === 0) return '';
+
+    const methodLabel = order.shipping_method === 'pickup' ? 'Store Pickup' : 'Delivery';
+    return `<div style="background-color:#f9fafb;border-radius:12px;padding:16px 20px;margin:20px 0;">
+<p style="margin:0 0 8px;color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;">${methodLabel} Address</p>
+${lines.map(l => `<p style="margin:2px 0;color:#374151;font-size:13px;line-height:1.5;">${l}</p>`).join('')}
+</div>`;
+}
+
+interface OrderEmailItem {
+    product_name: string;
+    variant_name?: string | null;
+    quantity: number;
+    unit_price: number;
+    total_price: number;
+    metadata?: { image?: string; preorder_shipping?: string | null } | null;
+}
+
 // Shipping notes block
 function emailShippingNotes(notes: string[]): string {
     if (notes.length === 0) return '';
@@ -214,14 +292,16 @@ export async function sendOrderConfirmation(order: any) {
 
     console.log(`[Notification] Preparing for Order #${order_number} | Phone: ${phone ? 'Present' : 'Missing'} | Tracking: ${trackingNumber || 'None'}`);
 
-    // Fetch order items to get preorder_shipping info
+    // Fetch full order items for the itemized breakdown + preorder notes
+    let orderItems: OrderEmailItem[] = [];
     let shippingNotes: string[] = [];
     try {
         const { data: items } = await supabase
             .from('order_items')
-            .select('product_name, metadata')
+            .select('product_name, variant_name, quantity, unit_price, total_price, metadata')
             .eq('order_id', id);
         if (items) {
+            orderItems = items as OrderEmailItem[];
             for (const item of items) {
                 const preorder = item.metadata?.preorder_shipping;
                 if (preorder) {
@@ -230,8 +310,10 @@ export async function sendOrderConfirmation(order: any) {
             }
         }
     } catch (err) {
-        console.warn('[Notification] Could not fetch order items for shipping notes');
+        console.warn('[Notification] Could not fetch order items');
     }
+
+    const itemsCount = orderItems.reduce((sum, it) => sum + Number(it.quantity || 0), 0);
 
     const shippingNotesSms = shippingNotes.length > 0
         ? ` Note: ${shippingNotes.join('; ')}.`
@@ -249,8 +331,14 @@ export async function sendOrderConfirmation(order: any) {
   ${emailInfoRow('Order Number', `#${order_number || id}`)}
   ${emailInfoRow('Order Date', new Date(created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }))}
   ${trackingNumber ? emailInfoRow('Tracking', trackingNumber) : ''}
-  ${emailInfoRow('Total', `GH₵${Number(total).toFixed(2)}`)}
+  ${itemsCount > 0 ? emailInfoRow('Items', `${itemsCount}`) : ''}
 </table>
+
+${emailItemsTable(orderItems)}
+
+${emailTotalsTable(order)}
+
+${emailAddressBlock(order)}
 
 ${emailShippingNotes(shippingNotes)}
 
@@ -267,22 +355,30 @@ ${emailButton('Track Your Order', trackingUrl)}
         html: customerEmailHtml
     });
 
-    // 2. Email to Admin
+    // 2. Email to Admin — full order breakdown
     const adminEmailHtml = emailLayout(`
 <h2 style="margin:0 0 16px;color:#111827;font-size:20px;">&#128230; New Order Received</h2>
 
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f9fafb;border-radius:12px;overflow:hidden;margin:16px 0;">
   ${emailInfoRow('Order', `#${order_number || id}`)}
-  ${emailInfoRow('Customer', `${name}`)}
-  ${emailInfoRow('Email', email)}
-  ${emailInfoRow('Total', `GH₵${Number(total).toFixed(2)}`)}
+  ${emailInfoRow('Customer', escapeHtml(name))}
+  ${emailInfoRow('Email', `<a href="mailto:${email}" style="color:${BRAND.color};">${email}</a>`)}
+  ${phone ? emailInfoRow('Phone', `<a href="tel:${phone}" style="color:${BRAND.color};">${escapeHtml(phone)}</a>`) : ''}
+  ${emailInfoRow('Fulfilment', order.shipping_method === 'pickup' ? 'Store Pickup' : 'Delivery')}
+  ${emailInfoRow('Payment', `${escapeHtml(order.payment_method || 'N/A')} — ${escapeHtml(order.payment_status || 'pending')}`)}
   ${trackingNumber ? emailInfoRow('Tracking', trackingNumber) : ''}
 </table>
+
+${emailItemsTable(orderItems)}
+
+${emailTotalsTable(order)}
+
+${emailAddressBlock(order)}
 
 ${emailShippingNotes(shippingNotes)}
 
 ${emailButton('View Order in Admin', `${baseUrl}/admin/orders/${id}`)}
-`, `New order #${order_number} from ${name}`);
+`, `New order #${order_number} from ${name} — GH₵${Number(total).toFixed(2)}`);
 
     await sendEmail({
         to: ADMIN_EMAIL,
