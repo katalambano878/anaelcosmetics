@@ -77,10 +77,10 @@ export default function AboutPage() {
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 mb-8 tracking-tight">How It All Started</h2>
               <div className="space-y-6 text-lg text-gray-500 leading-relaxed font-light">
                 <p>
-                  <strong className="font-semibold text-gray-900">{siteName}</strong> started with a simple idea: bring quality lip glosses, lip liners, lip care, lashes, hair clips and makeup bags to our customers at fair prices. We handpick every product, test it for quality, and price it fairly.
+                  At <strong className="font-semibold text-gray-900">ANAEL Cosmetics</strong>, we believe beauty starts with confidence. Makeup isn&apos;t about changing who you are — it&apos;s about bringing out what already makes you beautiful. Whether you&apos;re keeping it soft or going full glam, our products are made to help you feel your best every time you wear them.
                 </p>
                 <p>
-                  Whether you are shopping for yourself or looking for the perfect gift, {siteName} has you covered with a wide selection at the best value.
+                  We carefully select every product for its quality, performance, and comfort, so you can enjoy makeup that looks good, lasts, and is worth every penny. Our goal is simple: to give you products you can trust and a shopping experience you&apos;ll always come back to.
                 </p>
               </div>
             </div>
