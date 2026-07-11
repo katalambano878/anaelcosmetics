@@ -30,12 +30,9 @@ export default function Footer() {
   const siteName = getSetting('site_name') || 'ANAEL';
   const siteLogo = getSetting('site_logo') || '/anael-logo.png';
   const siteTagline = getSetting('site_tagline') || '';
-  const socialFacebook = getSetting('social_facebook') || '';
   const socialInstagram = getSetting('social_instagram') || '';
-  const socialTwitter = getSetting('social_twitter') || '';
   const socialTiktok = getSetting('social_tiktok') || '';
   const socialSnapchat = getSetting('social_snapchat') || '';
-  const socialYoutube = getSetting('social_youtube') || '';
 
   const normalizeSocialUrl = (value: string, baseUrl?: string) => {
     const raw = value.trim();
@@ -52,27 +49,11 @@ export default function Footer() {
     return `https://${raw}`;
   };
 
-  const configuredSocialLinks = [
+  const socialLinks = [
     { link: normalizeSocialUrl(socialInstagram, 'https://instagram.com/'), icon: 'ri-instagram-line', label: 'Instagram' },
     { link: normalizeSocialUrl(socialTiktok, 'https://www.tiktok.com/@'), icon: 'ri-tiktok-fill', label: 'TikTok' },
     { link: normalizeSocialUrl(socialSnapchat, 'https://www.snapchat.com/add/'), icon: 'ri-snapchat-fill', label: 'Snapchat' },
-    { link: normalizeSocialUrl(socialYoutube, 'https://youtube.com/'), icon: 'ri-youtube-fill', label: 'YouTube' },
-    { link: normalizeSocialUrl(socialTwitter, 'https://x.com/'), icon: 'ri-twitter-x-fill', label: 'X (Twitter)' },
-    { link: normalizeSocialUrl(socialFacebook, 'https://facebook.com/'), icon: 'ri-facebook-fill', label: 'Facebook' }
-  ];
-
-  const hasConfiguredSocial = [
-    socialInstagram,
-    socialTiktok,
-    socialSnapchat,
-    socialYoutube,
-    socialTwitter,
-    socialFacebook
-  ].some((value) => value.trim().length > 0);
-
-  const socialLinks = hasConfiguredSocial
-    ? configuredSocialLinks.filter((social) => social.link)
-    : configuredSocialLinks.slice(0, 3);
+  ].filter((social) => social.link);
 
   return (
     <footer className="relative mt-20 z-0">
