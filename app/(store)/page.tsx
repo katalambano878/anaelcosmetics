@@ -100,7 +100,7 @@ export default function Home() {
           .eq('status', 'active')
           .eq('featured', true)
           .order('created_at', { ascending: false })
-          .limit(16);
+          .limit(4);
 
         if (productsError) throw productsError;
         setFeaturedProducts(productsData || []);
@@ -393,15 +393,15 @@ export default function Home() {
           </AnimatedSection>
 
           {loading ? (
-            <div className="grid grid-cols-4 gap-2 sm:gap-4 md:gap-6 lg:gap-8">
-              {[...Array(8)].map((_, i) => (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 lg:gap-8">
+              {[...Array(4)].map((_, i) => (
                 <ProductCardSkeleton key={i} />
               ))}
             </div>
           ) : (
-            <AnimatedGrid className="grid grid-cols-4 gap-2 sm:gap-4 md:gap-6 lg:gap-8">
+            <AnimatedGrid className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 lg:gap-8">
               {featuredProducts.map((product) => (
-                <ProductCard key={product.id} {...mapProductToSlider(product)} compact />
+                <ProductCard key={product.id} {...mapProductToSlider(product)} />
               ))}
             </AnimatedGrid>
           )}
