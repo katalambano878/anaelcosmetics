@@ -54,7 +54,7 @@ export async function testSmsAction(phone: string, message: string, authToken: s
             },
             body: JSON.stringify({
                 type: 1,
-                senderid: 'STORE',
+                senderid: process.env.MOOLRE_SMS_SENDER_ID || 'ANAEL',
                 messages: [
                     {
                         recipient: recipient,
