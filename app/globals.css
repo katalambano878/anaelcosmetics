@@ -118,6 +118,22 @@
   }
 }
 
+/* Continuous product marquee (ProductSlider) */
+@keyframes productMarquee {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-product-marquee {
+  animation: productMarquee linear infinite;
+  will-change: transform;
+}
+
 /* ========================================
    ANIMATION UTILITY CLASSES
    ======================================== */

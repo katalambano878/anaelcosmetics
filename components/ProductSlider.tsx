@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import ProductCard, { type ColorVariant } from '@/components/ProductCard';
 
 export interface SliderProduct {
@@ -23,61 +23,26 @@ export interface SliderProduct {
 
 interface ProductSliderProps {
   products: SliderProduct[];
-  autoPlayInterval?: number;
+  /** Seconds each product takes to cross the viewport — lower is faster */
+  secondsPerItem?: number;
   fadeColor?: 'white' | 'stone-50';
-}
-
-function getItemsPerView(width: number): number {
-  if (width < 640) return 1;
-  if (width < 768) return 2;
-  if (width < 1024) return 3;
-  return 4;
 }
 
 export default function ProductSlider({
   products,
-  autoPlayInterval = 4000,
+  secondsPerItem = 5,
   fadeColor = 'white',
 }: ProductSliderProps) {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [itemsPerView, setItemsPerView] = useState(4);
   const [isPaused, setIsPaused] = useState(false);
 
   const fadeFrom = fadeColor === 'stone-50' ? 'from-stone-50' : 'from-white';
 
-  useEffect(() => {
-    const updateItemsPerView = () => setItemsPerView(getItemsPerView(window.innerWidth));
-    updateItemsPerView();
-    window.addEventListener('resize', updateItemsPerView);
-    return () => window.removeEventListener('resize', updateItemsPerView);
-  }, []);
-
-  const maxIndex = Math.max(0, products.length - itemsPerView);
-  const slideCount = maxIndex + 1;
-  const canSlide = products.length > itemsPerView;
-
-  useEffect(() => {
-    setCurrentIndex((prev) => Math.min(prev, maxIndex));
-  }, [maxIndex]);
-
-  useEffect(() => {
-    if (!canSlide || isPaused) return;
-
-    const timer = setInterval(() => {
-      setCurrentIndex((prev) => (prev >= maxIndex ? 0 : prev + 1));
-    }, autoPlayInterval);
-
-    return () => clearInterval(timer);
-  }, [canSlide, isPaused, maxIndex, autoPlayInterval]);
-
   if (products.length === 0) return null;
 
-  const gridClass =
-    'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 lg:gap-8';
-
-  if (!canSlide) {
+  // Static grid when there aren't enough products to be worth scrolling
+  if (products.length < 5) {
     return (
-      <div className={gridClass}>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 lg:gap-8">
         {products.map((product) => (
           <ProductCard key={product.id} {...product} />
         ))}
@@ -85,11 +50,17 @@ export default function ProductSlider({
     );
   }
 
+  // The track holds two copies of the list; animating it from 0 to -50%
+  // then looping gives a seamless, continuous flow.
+  const duration = products.length * secondsPerItem;
+
   return (
     <div
       className="relative"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
+      onTouchStart={() => setIsPaused(true)}
+      onTouchEnd={() => setIsPaused(false)}
       onFocusCapture={() => setIsPaused(true)}
       onBlurCapture={() => setIsPaused(false)}
     >
@@ -98,38 +69,25 @@ export default function ProductSlider({
 
       <div className="overflow-hidden">
         <div
-          className="flex transition-transform duration-700 ease-in-out"
+          className="flex w-max animate-product-marquee"
           style={{
-            width: `${(products.length / itemsPerView) * 100}%`,
-            transform: `translateX(-${(currentIndex / products.length) * 100}%)`,
+            animationDuration: `${duration}s`,
+            animationPlayState: isPaused ? 'paused' : 'running',
           }}
         >
-          {products.map((product) => (
-            <div
-              key={product.id}
-              className="flex-shrink-0 px-3"
-              style={{ width: `${100 / products.length}%` }}
-            >
-              <ProductCard {...product} />
+          {[0, 1].map((copy) => (
+            <div key={copy} className="flex" aria-hidden={copy === 1}>
+              {products.map((product) => (
+                <div
+                  key={`${copy}-${product.id}`}
+                  className="w-44 flex-shrink-0 px-2 sm:w-56 sm:px-3 md:w-64 lg:w-72"
+                >
+                  <ProductCard {...product} />
+                </div>
+              ))}
             </div>
           ))}
         </div>
-      </div>
-
-      <div className="mt-10 flex items-center justify-center gap-2">
-        {Array.from({ length: slideCount }).map((_, index) => (
-          <button
-            key={index}
-            type="button"
-            onClick={() => setCurrentIndex(index)}
-            className={`h-1.5 rounded-full transition-all duration-500 ${
-              currentIndex === index
-                ? 'w-8 bg-gray-900'
-                : 'w-1.5 bg-gray-300 hover:bg-gray-400'
-            }`}
-            aria-label={`Go to slide ${index + 1}`}
-          />
-        ))}
       </div>
     </div>
   );
