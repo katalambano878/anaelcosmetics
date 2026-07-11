@@ -17,23 +17,23 @@ export default function AboutPage() {
   const values = [
     {
       icon: 'ri-verified-badge-line',
-      title: 'Verified Quality',
-      description: 'Every product is personally inspected before it reaches you. Whether sourced locally or imported from China, quality comes first.'
+      title: 'Quality Comes First',
+      description: 'At Anael Cosmetics, quality comes first. We offer carefully crafted beauty essentials designed to look good, last, and feel comfortable every time you wear them.'
+    },
+    {
+      icon: 'ri-palette-line',
+      title: 'Shades for Every Skin Tone',
+      description: 'Beautiful shades for every skin tone. Whether you\u2019re keeping it soft or going full glam, there\u2019s something made for you.'
     },
     {
       icon: 'ri-money-dollar-circle-line',
-      title: 'Unbeatable Prices',
-      description: 'By sourcing directly from manufacturers and local suppliers, we cut out the middleman and pass the savings to you.'
-    },
-    {
-      icon: 'ri-global-line',
-      title: 'Local & Imported',
-      description: 'The best of both worlds — handpicked local products alongside carefully selected imports from trusted Chinese suppliers.'
+      title: 'Luxury Without Compromise',
+      description: 'Our products give you the perfect balance of luxury, quality, and value — all at affordable prices, so you never have to compromise.'
     },
     {
       icon: 'ri-truck-line',
-      title: 'Nationwide Delivery',
-      description: 'Fast and reliable delivery across Ghana. Based in Accra, we ship to every region with care and speed.'
+      title: 'An Exceptional Experience',
+      description: 'From the moment you shop to the moment your order arrives, we\u2019re committed to giving you an exceptional experience that keeps you coming back.'
     }
   ];
 
@@ -166,7 +166,7 @@ export default function AboutPage() {
           <div className="text-center mb-20 flex flex-col items-center">
             <span className="inline-block py-1.5 px-5 rounded-full bg-white text-gray-600 font-bold text-[11px] tracking-[0.25em] uppercase mb-6 border border-gray-200/60 shadow-[0_2px_15px_-4px_rgba(0,0,0,0.05)]">The Standard</span>
             <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black text-gray-900 mb-6 tracking-tight">Why Shop With Us?</h2>
-            <p className="text-lg sm:text-xl text-gray-500 max-w-2xl mx-auto font-light leading-relaxed">Trusted by hundreds of customers and resellers across Ghana.</p>
+            <p className="text-lg sm:text-xl text-gray-500 max-w-2xl mx-auto font-light leading-relaxed">Carefully crafted beauty essentials in beautiful shades for every skin tone — all at affordable prices.</p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 max-w-7xl mx-auto">
