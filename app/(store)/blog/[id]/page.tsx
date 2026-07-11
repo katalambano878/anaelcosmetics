@@ -1,5 +1,45 @@
 import Link from 'next/link';
 import { sanitizeHtml } from '@/lib/sanitize';
+import { buildPageMetadata } from '@/lib/seo';
+import type { Metadata } from 'next';
+
+const BLOG_POST_SEO: Record<string, { title: string; description: string; image: string; author: string }> = {
+  '1': {
+    title: 'The Ultimate Guide to Online Shopping in Ghana',
+    description: 'Learn how to shop online safely and confidently in Ghana with this comprehensive beauty and ecommerce guide from ANAEL Cosmetics.',
+    image: 'https://readdy.ai/api/search-image?query=Modern%20African%20woman%20shopping%20online%20on%20laptop%20in%20bright%20contemporary%20home%20office%20coffee%20cup%20plants%20natural%20light%20relaxed%20lifestyle%20photography%20minimal%20clean%20background&width=1200&height=600&seq=blogpost1&orientation=landscape',
+    author: 'Staff Writer',
+  },
+  '2': {
+    title: '10 Must-Have Products for Your Home This Season',
+    description: 'Discover must-have products and smart shopping tips to elevate your space and style this season.',
+    image: 'https://readdy.ai/api/search-image?query=Beautiful%20modern%20African%20home%20interior%20with%20stylish%20furniture%20decor%20items%20plants%20bright%20natural%20lighting%20contemporary%20design%20magazine%20quality%20photography&width=1200&height=600&seq=blogpost2&orientation=landscape',
+    author: 'Staff Writer',
+  },
+  '3': {
+    title: "How to Choose Quality Products: A Buyer's Guide",
+    description: 'A practical buyer’s guide to identifying genuine quality and making confident purchase decisions.',
+    image: 'https://readdy.ai/api/search-image?query=Person%20examining%20product%20quality%20checking%20labels%20and%20details%20in%20bright%20retail%20setting%20closeup%20hands%20inspecting%20merchandise%20professional%20photography%20clean%20background&width=1200&height=600&seq=blogpost3&orientation=landscape',
+    author: 'Staff Writer',
+  },
+};
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const post = BLOG_POST_SEO[id];
+  if (!post) {
+    return buildPageMetadata({ title: 'Blog Article', path: `/blog/${id}`, noindex: true });
+  }
+  return buildPageMetadata({
+    title: post.title,
+    description: post.description,
+    path: `/blog/${id}`,
+    ogImage: post.image,
+    ogType: 'article',
+    author: post.author,
+    keywords: ['beauty blog Ghana', 'ANAEL Cosmetics tips'],
+  });
+}
 
 export async function generateStaticParams() {
   return [

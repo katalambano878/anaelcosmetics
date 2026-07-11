@@ -3,6 +3,18 @@ import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { CartProvider } from "@/context/CartContext";
 import { WishlistProvider } from "@/context/WishlistContext";
+import {
+  SITE_URL,
+  SITE_NAME,
+  SITE_SHORT_NAME,
+  SITE_DESCRIPTION,
+  DEFAULT_KEYWORDS,
+  DEFAULT_OG_IMAGE,
+  organizationSchema,
+  websiteSchema,
+  localBusinessSchema,
+  absoluteUrl,
+} from "@/lib/seo";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -12,30 +24,20 @@ export const viewport: Viewport = {
   themeColor: '#2563eb',
 };
 
-const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.anaelcosmetics.com';
+const siteUrl = SITE_URL;
 
-// Favicon & OG from public: add favicon.ico, favicon.png, og-image.png (1200×630) to public as needed
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: 'ANAEL — Lip Glosses, Lashes, Hair Clips & Makeup Bags in Ghana',
-    template: '%s | ANAEL'
+    default: `${SITE_NAME} — Lip Glosses, Lashes & Beauty Essentials in Ghana`,
+    template: `%s | ${SITE_SHORT_NAME}`,
   },
-  description: 'Shop premium quality lip glosses, lip liners, lashes, hair clips and makeup bags at unbeatable prices. Based in Accra, Ghana with nationwide delivery.',
-  keywords: [
-    'lip gloss Ghana',
-    'lip liners',
-    'lashes Ghana',
-    'hair clips',
-    'makeup bags',
-    'cosmetics Accra',
-    'beauty products Ghana',
-    'Anael cosmetics'
-  ],
-  authors: [{ name: 'ANAEL' }],
-  creator: 'ANAEL',
-  publisher: 'ANAEL',
-  applicationName: 'ANAEL',
+  description: SITE_DESCRIPTION,
+  keywords: DEFAULT_KEYWORDS,
+  authors: [{ name: SITE_SHORT_NAME }],
+  creator: SITE_SHORT_NAME,
+  publisher: SITE_SHORT_NAME,
+  applicationName: SITE_SHORT_NAME,
   referrer: "origin-when-cross-origin",
   robots: {
     index: true,
@@ -49,9 +51,7 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: [
-      { url: '/favicon.png', sizes: 'any', type: 'image/png' },
-    ],
+    icon: [{ url: '/favicon.png', sizes: 'any', type: 'image/png' }],
     shortcut: '/favicon.png',
     apple: '/favicon.png',
   },
@@ -59,7 +59,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'ANAEL',
+    title: SITE_SHORT_NAME,
   },
   formatDetection: {
     telephone: true,
@@ -67,24 +67,24 @@ export const metadata: Metadata = {
     address: false,
   },
   verification: {
-    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || '',
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || undefined,
   },
   openGraph: {
     type: "website",
     locale: "en_GH",
     url: siteUrl,
-    title: 'ANAEL — Premium Cosmetics & Beauty Products',
-    description: 'Shop premium quality lip glosses, lip liners, lashes, hair clips and makeup bags. Based in Accra, Ghana.',
-    siteName: 'ANAEL',
+    title: `${SITE_NAME} — Premium Cosmetics & Beauty Products`,
+    description: SITE_DESCRIPTION,
+    siteName: SITE_SHORT_NAME,
     images: [
-      { url: '/og-image.png', width: 1200, height: 630, alt: 'ANAEL Cosmetics', type: 'image/png' },
+      { url: absoluteUrl(DEFAULT_OG_IMAGE), width: 1200, height: 630, alt: SITE_NAME, type: 'image/png' },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: 'ANAEL — Premium Cosmetics & Beauty Products',
-    description: 'Shop premium quality lip glosses, lip liners, lashes, hair clips and makeup bags. Based in Accra, Ghana.',
-    images: ['/og-image.png'],
+    title: `${SITE_NAME} — Premium Cosmetics & Beauty Products`,
+    description: SITE_DESCRIPTION,
+    images: [absoluteUrl(DEFAULT_OG_IMAGE)],
   },
   alternates: {
     canonical: siteUrl,
@@ -129,24 +129,18 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
-        {/* Structured Data - Organization */}
+        {/* Structured Data */}
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "Organization",
-              "name": "ANAEL",
-              "url": siteUrl,
-              "description": "Premium quality lip glosses, lip liners, lashes, hair clips and makeup bags. Based in Accra, Ghana.",
-              "telephone": "0242853166",
-              "address": {
-                "@type": "PostalAddress",
-                "addressLocality": "Accra",
-                "addressCountry": "GH"
-              }
-            })
-          }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema()) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema()) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema()) }}
         />
       </head>
 

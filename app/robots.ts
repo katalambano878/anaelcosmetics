@@ -1,8 +1,7 @@
 import { MetadataRoute } from 'next';
+import { absoluteUrl } from '@/lib/seo';
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.anaelcosmetics.com';
-
   return {
     rules: [
       {
@@ -11,12 +10,22 @@ export default function robots(): MetadataRoute.Robots {
         disallow: [
           '/admin/',
           '/api/',
-          '/checkout',
-          '/cart',
           '/account/',
+          '/auth/',
+          '/checkout/',
+          '/cart/',
+          '/wishlist/',
+          '/order-tracking/',
+          '/order-success/',
+          '/pay/',
+          '/returns/confirmation/',
+          '/offline/',
+          '/maintenance/',
+          '/pwa-settings/',
         ],
       },
     ],
-    sitemap: `${baseUrl}/sitemap.xml`,
+    sitemap: absoluteUrl('/sitemap.xml'),
+    host: absoluteUrl(),
   };
 }
