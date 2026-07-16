@@ -55,8 +55,35 @@ export default function CheckoutPage() {
   ];
 
   const [deliveryMethod, setDeliveryMethod] = useState('pickup');
-  const [paymentMethod, setPaymentMethod] = useState('moolre');
+  // Moolre temporarily disabled — orders go through WhatsApp instead
+  // const [paymentMethod, setPaymentMethod] = useState('moolre');
+  const [paymentMethod] = useState('whatsapp');
   const [errors, setErrors] = useState<any>({});
+
+  // Store WhatsApp number (E.164, no +) that receives the orders
+  const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '233242853166';
+
+  const buildWhatsAppMessage = (orderNumber: string, trackingNumber: string) => {
+    const lines = [
+      `Hello ANAEL Cosmetics! I just placed an order on your website.`,
+      ``,
+      `*Order:* ${orderNumber}`,
+      `*Tracking:* ${trackingNumber}`,
+      ``,
+      `*My Items:*`,
+      ...cart.map((item, i) =>
+        `${i + 1}. ${item.name}${item.variant ? ` (${item.variant})` : ''} x${item.quantity} — GH₵${(item.price * item.quantity).toFixed(2)}`
+      ),
+      ``,
+      `*Total: GH₵${total.toFixed(2)}*`,
+      ``,
+      `*Delivery:* ${deliveryMethod === 'pickup' ? 'Store Pickup' : 'Doorstep Delivery'}`,
+      `*Name:* ${shippingData.firstName} ${shippingData.lastName}`,
+      `*Phone:* ${shippingData.phone}`,
+      `*Address:* ${shippingData.address}, ${shippingData.city}, ${shippingData.region}`,
+    ];
+    return lines.join('\n');
+  };
 
 
 
@@ -115,7 +142,7 @@ export default function CheckoutPage() {
   };
 
   const handleContinueToPayment = async () => {
-    // Skip step 3 and directly initiate payment with default method (Moolre/Mobile Money)
+    // Skip step 3 — place the order and send the details to WhatsApp
     await handlePlaceOrder();
   };
 
@@ -247,6 +274,7 @@ export default function CheckoutPage() {
       });
 
       // 4. Handle Payment Redirects or Completion
+      /* Moolre payment temporarily disabled — orders are sent via WhatsApp instead.
       if (paymentMethod === 'moolre') {
         try {
           // Payment link reminder will be sent automatically after 15 mins if unpaid (via cron)
@@ -281,8 +309,9 @@ export default function CheckoutPage() {
           return; // Stop execution
         }
       }
+      */
 
-      // 5. Send Notifications (For COD or others)
+      // 5. Send Notifications
       fetch('/api/notifications', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -292,9 +321,12 @@ export default function CheckoutPage() {
         })
       }).catch(err => console.error('Notification trigger error:', err));
 
-      // 6. Clear Cart & Redirect (For COD)
+      // 6. Clear cart and send the customer to WhatsApp with the order pre-filled.
+      // Direct navigation (not window.open) so popup blockers can't interfere;
+      // on mobile this opens the WhatsApp app.
+      const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(buildWhatsAppMessage(orderNumber, trackingNumber))}`;
       clearCart();
-      router.push(`/order-success?order=${orderNumber}`);
+      window.location.href = whatsappUrl;
 
     } catch (err: any) {
       console.error('Checkout error:', err);
@@ -606,7 +638,7 @@ export default function CheckoutPage() {
                     <button
                       onClick={handleContinueToPayment}
                       disabled={isLoading}
-                      className="flex-1 bg-blue-700 hover:bg-blue-800 text-white py-4 rounded-lg font-semibold transition-colors whitespace-nowrap cursor-pointer disabled:opacity-70 flex items-center justify-center"
+                      className="flex-1 bg-[#25D366] hover:bg-[#1DA851] text-white py-4 rounded-lg font-semibold transition-colors whitespace-nowrap cursor-pointer disabled:opacity-70 flex items-center justify-center"
                     >
                       {isLoading ? (
                         <>
@@ -617,7 +649,10 @@ export default function CheckoutPage() {
                           Processing...
                         </>
                       ) : (
-                        'Pay with Mobile Money'
+                        <>
+                          <i className="ri-whatsapp-line text-xl mr-2"></i>
+                          Complete Order on WhatsApp
+                        </>
                       )}
                     </button>
                   </div>
