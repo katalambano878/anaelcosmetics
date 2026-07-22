@@ -88,11 +88,11 @@ export default function AboutPage() {
               {/* About image */}
               <div className="aspect-[4/5] sm:aspect-square lg:aspect-[3/4] rounded-[2.5rem] overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100/50 relative flex items-center justify-center border border-gray-200 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] transition-transform duration-1000 group-hover:scale-[1.02]">
                 <Image
-                  src="/about-hero.png"
+                  src="/about-story.png"
                   alt={`${siteName} about visual`}
                   fill
                   sizes="(min-width: 1024px) 480px, 70vw"
-                  className="object-cover object-top"
+                  className="object-cover object-center"
                   priority
                 />
               </div>
