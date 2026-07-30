@@ -4,8 +4,6 @@
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
-
 function OrderSuccessContent() {
   const searchParams = useSearchParams();
   const orderNumber = searchParams.get('order');
@@ -15,7 +13,17 @@ function OrderSuccessContent() {
   const [showConfetti, setShowConfetti] = useState(true);
   const [verifying, setVerifying] = useState(false);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  async function lookupOrder(orderNum: string) {
+    const res = await fetch('/api/storefront/orders/lookup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode: 'success', orderNumber: orderNum }),
+    });
+    const result = await res.json().catch(() => ({}));
+    if (!res.ok || !result.success || !result.order) return null;
+    return result.order;
+  }
+
   useEffect(() => {
     async function fetchOrder() {
       if (!orderNumber) {
@@ -24,21 +32,38 @@ function OrderSuccessContent() {
       }
 
       try {
-        const { data: orderData, error } = await supabase
-          .from('orders')
-          .select(`
-                    *,
-                    order_items (*)
-                `)
-          .eq('order_number', orderNumber)
-          .single();
+        const orderData = await lookupOrder(orderNumber);
+        if (orderData) {
+          setOrder(orderData);
 
-        if (error) throw error;
-        setOrder(orderData);
+          if (paymentSuccess === 'true' && orderData.payment_status !== 'paid') {
+            setVerifying(true);
+            await new Promise(resolve => setTimeout(resolve, 3000));
 
-        // If redirected from payment and order is still pending, try to verify
-        if (paymentSuccess === 'true' && orderData && orderData.payment_status !== 'paid') {
-          verifyPayment(orderNumber, orderData);
+            const refreshed = await lookupOrder(orderNumber);
+            if (refreshed?.payment_status === 'paid') {
+              setOrder(refreshed);
+              setVerifying(false);
+              return;
+            }
+
+            try {
+              const res = await fetch('/api/payment/moolre/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ orderNumber }),
+              });
+              const result = await res.json();
+              if (result.success && result.payment_status === 'paid') {
+                const updated = await lookupOrder(orderNumber);
+                if (updated) setOrder(updated);
+              }
+            } catch (err) {
+              console.error('Payment verification failed:', err);
+            } finally {
+              setVerifying(false);
+            }
+          }
         }
       } catch (err) {
         console.error('Error fetching order:', err);
@@ -47,55 +72,7 @@ function OrderSuccessContent() {
       }
     }
     fetchOrder();
-  }, [orderNumber]);
-
-  // Payment verification - called when user is redirected from Moolre with payment_success=true
-  const verifyPayment = async (orderNum: string, initialOrder: any) => {
-    setVerifying(true);
-    
-    // Wait 3 seconds to give the callback a chance to process first
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    
-    // Re-fetch order to check if callback already updated it
-    const { data: refreshed } = await supabase
-      .from('orders')
-      .select('*, order_items (*)')
-      .eq('order_number', orderNum)
-      .single();
-    
-    if (refreshed?.payment_status === 'paid') {
-      setOrder(refreshed);
-      setVerifying(false);
-      return;
-    }
-
-    // Callback hasn't fired - verify via our endpoint
-    // Verify payment via Moolre API — we no longer trust the redirect alone
-    try {
-      const res = await fetch('/api/payment/moolre/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderNumber: orderNum })
-      });
-      
-      const result = await res.json();
-      console.log('Payment verification result:', result);
-      
-      if (result.success && result.payment_status === 'paid') {
-        // Re-fetch full order data
-        const { data: updated } = await supabase
-          .from('orders')
-          .select('*, order_items (*)')
-          .eq('order_number', orderNum)
-          .single();
-        if (updated) setOrder(updated);
-      }
-    } catch (err) {
-      console.error('Payment verification failed:', err);
-    } finally {
-      setVerifying(false);
-    }
-  };
+  }, [orderNumber, paymentSuccess]);
 
   if (loading) {
     return (

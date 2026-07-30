@@ -3,10 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
 import { usePageTitle } from '@/hooks/usePageTitle';
-
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export default function PaymentPage() {
   usePageTitle('Complete Payment');
@@ -22,31 +19,26 @@ export default function PaymentPage() {
   useEffect(() => {
     async function fetchOrder() {
       try {
-        // Fetch order by ID (UUID) or order_number
-        const baseQuery = supabase
-          .from('orders')
-          .select('*');
+        const res = await fetch('/api/storefront/orders/lookup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mode: 'pay', orderId }),
+        });
+        const result = await res.json().catch(() => ({}));
 
-        const orderQuery = UUID_REGEX.test(orderId)
-          ? baseQuery.eq('id', orderId)
-          : baseQuery.eq('order_number', orderId);
-
-        const { data, error: fetchError } = await orderQuery.single();
-
-        if (fetchError || !data) {
-          setError('Order not found. Please check your link and try again.');
+        if (!res.ok || !result.success || !result.order) {
+          setError(result.message || 'Order not found. Please check your link and try again.');
           setLoading(false);
           return;
         }
 
-        setOrder(data);
-
-        // If already paid, redirect to success page
+        const data = result.order;
         if (data.payment_status === 'paid') {
           router.push(`/order-success?order=${data.order_number}`);
           return;
         }
 
+        setOrder(data);
       } catch (err) {
         console.error('Error fetching order:', err);
         setError('Failed to load order details.');

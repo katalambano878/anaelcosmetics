@@ -1,13 +1,8 @@
 import { Metadata } from 'next';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { buildPageMetadata, absoluteUrl, productSchema, breadcrumbSchema } from '@/lib/seo';
 import ProductDetailClient from './ProductDetailClient';
 import { StructuredData } from '@/components/SEOHead';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 function getCategoryName(categories: unknown): string | undefined {
   if (!categories) return undefined;

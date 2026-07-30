@@ -1,6 +1,7 @@
 import { Resend } from 'resend';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin as supabase } from '@/lib/supabase-admin';
 import { escapeHtml } from '@/lib/sanitize';
+import { fetchWithTimeout } from '@/lib/fetch-timeout';
 
 const resend = new Resend(process.env.RESEND_API_KEY || 'missing_api_key');
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@example.com';
@@ -222,7 +223,7 @@ export async function sendSMS({ to, message }: { to: string; message: string }) 
 
     try {
         console.log(`[SMS] Sending to ${maskPhone(recipient)}`);
-        const response = await fetch('https://api.moolre.com/open/sms/send', {
+        const response = await fetchWithTimeout('https://api.moolre.com/open/sms/send', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -238,7 +239,7 @@ export async function sendSMS({ to, message }: { to: string; message: string }) 
                     }
                 ]
             })
-        });
+        }, 15000);
 
         const contentType = response.headers.get('content-type') || '';
         if (!contentType.includes('application/json')) {

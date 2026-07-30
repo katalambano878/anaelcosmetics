@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { sendOrderConfirmation } from '@/lib/notifications';
 import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from '@/lib/rate-limit';
+import { fetchWithTimeout } from '@/lib/fetch-timeout';
 
 /**
  * Payment verification endpoint.
@@ -91,12 +92,12 @@ export async function POST(req: Request) {
 
         for (const ref of refCandidates) {
             try {
-                const checkResponse = await fetch('https://api.moolre.com/open/transact/status', {
+                const checkResponse = await fetchWithTimeout('https://api.moolre.com/open/transact/status', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-API-USER': process.env.MOOLRE_API_USER,
-                        'X-API-PUBKEY': process.env.MOOLRE_API_PUBKEY
+                        'X-API-USER': process.env.MOOLRE_API_USER!,
+                        'X-API-PUBKEY': process.env.MOOLRE_API_PUBKEY!
                     },
                     body: JSON.stringify({
                         type: 1,
@@ -104,9 +105,9 @@ export async function POST(req: Request) {
                         id: ref,
                         accountnumber: process.env.MOOLRE_ACCOUNT_NUMBER
                     })
-                });
+                }, 15000);
 
-                const checkResult = await checkResponse.json();
+                const checkResult = await checkResponse.json().catch(() => ({}));
                 console.log('[Verify] Moolre status for', ref, ':', JSON.stringify(checkResult).substring(0, 300));
 
                 // txstatus: 1 = success, 2 = failed, 3 = not found/pending
@@ -115,14 +116,15 @@ export async function POST(req: Request) {
                 const isSuccess = checkResult?.status === 1 && (txStatus === 1 || txStatus === '1');
 
                 if (isSuccess) {
-                    // Verify the amount matches before trusting it
-                    if (data.amount !== undefined && data.amount !== null) {
-                        const paidAmount = parseFloat(String(data.amount));
-                        const expectedAmount = Number(order.total);
-                        if (Number.isFinite(paidAmount) && Math.abs(paidAmount - expectedAmount) > 0.01) {
-                            console.error('[Verify] AMOUNT MISMATCH! Expected:', expectedAmount, 'Got:', paidAmount);
-                            continue;
-                        }
+                    if (data.amount === undefined || data.amount === null) {
+                        console.error('[Verify] Missing amount from Moolre — rejecting ref', ref);
+                        continue;
+                    }
+                    const paidAmount = parseFloat(String(data.amount));
+                    const expectedAmount = Number(order.total);
+                    if (!Number.isFinite(paidAmount) || Math.abs(paidAmount - expectedAmount) > 0.01) {
+                        console.error('[Verify] AMOUNT MISMATCH! Expected:', expectedAmount, 'Got:', paidAmount);
+                        continue;
                     }
                     moolreApiVerified = true;
                     break;
@@ -171,10 +173,20 @@ export async function POST(req: Request) {
             }
         }
 
-        // 7. Send notifications (SMS + Email)
-        if (orderJson) {
+        // 7. Send notifications once (idempotent vs callback race)
+        if (orderJson && orderJson.metadata?.confirmation_sent !== true) {
             try {
                 await sendOrderConfirmation(orderJson);
+                await supabaseAdmin
+                    .from('orders')
+                    .update({
+                        metadata: {
+                            ...(orderJson.metadata || {}),
+                            confirmation_sent: true,
+                            confirmation_sent_at: new Date().toISOString(),
+                        }
+                    })
+                    .eq('id', orderJson.id);
                 console.log('[Verify] Notifications sent for:', orderNumber);
             } catch (notifyError: any) {
                 console.error('[Verify] Notification failed:', notifyError.message);

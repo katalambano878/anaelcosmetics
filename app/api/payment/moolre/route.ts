@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { checkRateLimit, getClientIdentifier, RATE_LIMITS } from '@/lib/rate-limit';
+import { fetchWithTimeout } from '@/lib/fetch-timeout';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -93,17 +94,23 @@ export async function POST(req: Request) {
 
         console.log('[Payment] Initiating for order:', orderRef, '| Amount from DB:', amount, '| Callback:', payload.callback);
 
-        const response = await fetch('https://api.moolre.com/embed/link', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-API-USER': process.env.MOOLRE_API_USER,
-                'X-API-PUBKEY': process.env.MOOLRE_API_PUBKEY
-            },
-            body: JSON.stringify(payload)
-        });
+        let response: Response;
+        try {
+            response = await fetchWithTimeout('https://api.moolre.com/embed/link', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-API-USER': process.env.MOOLRE_API_USER!,
+                    'X-API-PUBKEY': process.env.MOOLRE_API_PUBKEY!
+                },
+                body: JSON.stringify(payload)
+            }, 20000);
+        } catch (err: any) {
+            console.error('[Payment] Moolre request failed/timed out:', err?.message || err);
+            return NextResponse.json({ success: false, message: 'Payment gateway timeout. Please try again.' }, { status: 504 });
+        }
 
-        const result = await response.json();
+        const result = await response.json().catch(() => ({}));
         console.log('[Payment] Response status:', result.status, '| Has URL:', !!result.data?.authorization_url);
 
         if (result.status === 1 && result.data?.authorization_url) {
