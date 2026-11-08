@@ -166,7 +166,10 @@ export default function Footer() {
 
           {/* Footer Bottom Bar */}
           <div className="border-t border-[#1e3467]/60 mt-20 pt-10 flex flex-col md:flex-row justify-between items-center gap-6 text-[13px] text-[#93a7c9] font-light tracking-wide">
-            <p>&copy; {new Date().getFullYear()} {siteName}. All rights reserved.</p>
+            <p>
+              &copy; {new Date().getFullYear()} {siteName}. All rights reserved. &middot; Powered by{' '}
+              <a href="https://doctorbarns.com" target="_blank" rel="noopener" className="text-[#93a7c9] hover:underline">Doctor Barns Tech</a>
+            </p>
             <div className="flex gap-5 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
               <i className="ri-visa-line text-3xl"></i>
               <i className="ri-mastercard-line text-3xl"></i>
